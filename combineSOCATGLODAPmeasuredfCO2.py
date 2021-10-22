@@ -1,8 +1,22 @@
 # Main script calling to
+import os
 import time
 
-datafrom = 'remote' #'local' / 'remote' %source of data files
-filespathlocal = '/Users/rpr061/Downloads/'
+# Store relative path to this script
+script_dir = os.path.dirname(os.path.realpath(__file__))
+
+# Create and store output directory
+if not os.path.isdir('./output'):
+    os.mkdir(os.path.join(script_dir, 'output'))
+output_dir = os.path.join(script_dir, 'output')
+
+datafrom = 'local' #'local' / 'remote' %source of data files
+
+if (datafrom =='local'):
+  input_dir = os.path.join(script_dir, 'input')
+  print(input_dir)
+
+#filespathlocal = '/Users/rpr061/Downloads/'
 filespathremote = 'https://www.ncei.noaa.gov/data/oceans/ncei/ocads/data/0237935/' #only applicable to GLODAP for now
 socatdoi = '10.25921/yg69-jd96' # The SOCAT collection DOI info is not in ERDDAP (or can't find it)
 subset = True
@@ -31,7 +45,6 @@ for ds in datasources:
     if ('SOCAT' in ds):
         source = 'SOCATv2021'
         exec(open("importSOCAT.py").read())
-
     elif ('GLODAP' in ds):
         source = 'GLODAPv2.2021'
         exec(open("importGLODAP.py").read())
@@ -42,7 +55,7 @@ for ds in datasources:
         df = df.append(printdf)
 
 # Change format to integer for flags
-#allflags=[vardict['salf']]
+allflags=[vardict['salf']]
 df[vardict['salf']] = df[vardict['salf']].astype('UInt8')
 df[vardict['dicf']] = df[vardict['dicf']].astype('UInt8')
 df[vardict['alkf']] = df[vardict['alkf']].astype('UInt8')
@@ -69,7 +82,7 @@ df = df[commonvars].copy()
 #                 'fco2w':'FCO2_W','fco2wf':'FCO2W_FLAG','fco2wac':'ACCURACY_FCO2'}
 
 # Save to csv file
-df.to_csv(path_or_buf = filespathlocal + 'surfco2merged_remote.csv', sep = ',', na_rep = '', header = True, index = False, index_label = None)
+df.to_csv(path_or_buf = os.path.join(output_dir, 'surfco2merged_remote.csv'), sep = ',', na_rep = '', header = True, index = False, index_label = None)
 
 # Save to NetCDF per expocode. And one big csv
 # exportNCperID.py

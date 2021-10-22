@@ -13,7 +13,7 @@ expocodefile = 'EXPOCODES.txt'
 
 # Read the files (master file, dois, expocodes)
 if datafrom == 'local':
-    filespath = filespathlocal
+    filespath = os.path.join(input_dir, 'GLODAP')
 elif datafrom == 'remote':
     filespath = filespathremote
 else:
@@ -21,11 +21,11 @@ else:
 
 # print(sourcefile + " file has " + str(headerlines) + " header lines")
 start_time = time.time()
-tempdf = pd.read_csv(filespath + sourcefile, sep = separator, skiprows = headerlines, dtype = ddtype, na_values = -9999,
+tempdf = pd.read_csv(os.path.join(filespath, sourcefile), sep = separator, skiprows = headerlines, dtype = ddtype, na_values = -9999,
                      error_bad_lines = False)
-dois = pd.read_csv(filespath + doifile, sep = '\t', header = None, names = ['G2cruise', 'DOI'], dtype = ddtype,
+dois = pd.read_csv(os.path.join(filespath, doifile), sep = '\t', header = None, names = ['G2cruise', 'DOI'], dtype = ddtype,
                    error_bad_lines = False, encoding = 'utf_16_le')
-expocodes = pd.read_csv(filespath + expocodefile, sep = '\t', header = None, names = ['G2cruise', 'EXPOCODE'], dtype = ddtype,
+expocodes = pd.read_csv(os.path.join(filespath,expocodefile), sep = '\t', header = None, names = ['G2cruise', 'EXPOCODE'], dtype = ddtype,
                         error_bad_lines = False)
 print("--- %s seconds ---" % (time.time() - start_time))
 print(" data frame has " + str(len(tempdf)) + " lines")
