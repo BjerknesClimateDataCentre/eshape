@@ -1,5 +1,6 @@
 # SOCAT import. From local .tsv file or ERDDAP
 
+import os
 import pandas as pd
 import time
 from erddapy import ERDDAP
@@ -13,15 +14,16 @@ SOCATmetacolheadertextshort = 'Expocode\tversion\tDataset'
 # Dictionaries
 flagaccuracy = {"A": 2.0, "B": 2.0, "C": 5.0, "D": 5.0, "E": 10.0}
 
-# Read from local files (synthesis + flagE
+# Read from local files (synthesis + flagE)
 if (datafrom == 'local'):
-    filespath = filespathlocal
     SOCATmetacolheadertextshort = 'Expocode\tversion\tDataset'
     SOCATcolheadertextshort = 'Expocode\tversion\tSource_DOI\tQC_Flag'
 
-    for f in [source]:#,source+'_FlagE']:
-        file = f + '.tsv'
-        print(file)
+    SOCAT_files = os.listdir(os.path.join(input_dir, 'SOCAT'))
+
+    for file in SOCAT_files:
+        filepath = os.path.join(input_dir, 'SOCAT', file)
+        print(filepath)
 
         # Read metadata header for Cruise Flags and find the number of headerlines before the data
         separator = '\t'
@@ -29,7 +31,7 @@ if (datafrom == 'local'):
         headerlines = -1
         metaline = ''
         metaheaderlines = -1
-        f = open(filespath + file)
+        f = open(filepath)
 
         while SOCATmetacolheadertextshort not in metaline:
             metaline = f.readline()
@@ -42,7 +44,7 @@ if (datafrom == 'local'):
             metaline = f.readline()
             endmetaheaderlines = endmetaheaderlines + 1  # Where metadata lines end
         # Create metadata dataframe
-        metainfoAD = pd.read_csv(filespath + file, sep = '\t', skiprows = metaheaderlines,
+        metainfoAD = pd.read_csv(filepath, sep = '\t', skiprows = metaheaderlines,
                                  nrows = endmetaheaderlines - metaheaderlines - 1)
         # Find where data columns start
         headerlines = headerlines + endmetaheaderlines
@@ -56,7 +58,7 @@ if (datafrom == 'local'):
         start_time = time.time()  # Time the script
         ddtype = {0: str, 2: str}  # add type str to columns 0 and 2
         # Read the SOCAT file into a pandas dataframe
-        tempdf1 = pd.read_csv(filespath + file, sep = separator, skiprows = headerlines, dtype = ddtype)
+        tempdf1 = pd.read_csv(filepath, sep = separator, skiprows = headerlines, dtype = ddtype)
         print("--- %s seconds ---" % (time.time() - start_time))
         print(file + " data frame has " + str(len(tempdf1)) + " lines")
 
