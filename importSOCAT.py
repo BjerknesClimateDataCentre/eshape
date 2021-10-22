@@ -117,7 +117,7 @@ if (datafrom == 'local'):
         if 'tempdf' not in globals():
             tempdf = tempdf1
         else:
-            tempdf = tempdf1.append(tempdf1)
+            tempdf = tempdf.append(tempdf1)
 
 
 # If "remote"
