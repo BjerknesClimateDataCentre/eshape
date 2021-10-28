@@ -23,9 +23,9 @@ if (datafrom == 'local'):
 
     for file in SOCAT_files:
         filepath = os.path.join(input_dir, 'SOCAT', file)
-        print(filepath)
 
-        # Read metadata header for Cruise Flags and find the number of headerlines before the data
+        # Read metadata header for Cruise Flags and find the number of
+        # headerlines before the data
         separator = '\t'
         line = ''
         headerlines = -1
@@ -36,16 +36,19 @@ if (datafrom == 'local'):
         while SOCATmetacolheadertextshort not in metaline:
             metaline = f.readline()
             metaheaderlines = metaheaderlines + 1  # Where metadata lines start
-            # Find SOCAT collection DOI, while reading the file. The DOI is wrong AND have to remove the \n!!
-            #if ('DOI of the entire SOCAT collection:' in metaline): socatdoi=metaline.rsplit(' ',1)[1]
+            # Find SOCAT collection DOI, while reading the file. The DOI is
+            # wrong AND have to remove the \n!!
+            #if ('DOI of the entire SOCAT collection:' in metaline):
+            #  socatdoi = metaline.rsplit(' ', 1)[1]
 
         endmetaheaderlines = metaheaderlines
         while '\t' in metaline:
             metaline = f.readline()
-            endmetaheaderlines = endmetaheaderlines + 1  # Where metadata lines end
+            endmetaheaderlines = endmetaheaderlines + 1  # End of metadata lines
         # Create metadata dataframe
-        metainfoAD = pd.read_csv(filepath, sep = '\t', skiprows = metaheaderlines,
-                                 nrows = endmetaheaderlines - metaheaderlines - 1)
+        metainfoAD = pd.read_csv(filepath, sep = '\t',
+          skiprows = metaheaderlines,
+          nrows = endmetaheaderlines - metaheaderlines - 1)
         # Find where data columns start
         headerlines = headerlines + endmetaheaderlines
         while SOCATcolheadertextshort not in line:
@@ -58,35 +61,44 @@ if (datafrom == 'local'):
         start_time = time.time()  # Time the script
         ddtype = {0: str, 2: str}  # add type str to columns 0 and 2
         # Read the SOCAT file into a pandas dataframe
-        tempdf1 = pd.read_csv(filepath, sep = separator, skiprows = headerlines, dtype = ddtype)
+        tempdf1 = pd.read_csv(filepath, sep = separator, skiprows = headerlines,
+            dtype = ddtype)
         print("--- %s seconds ---" % (time.time() - start_time))
         print(file + " data frame has " + str(len(tempdf1)) + " lines")
 
         # Give all the same variable names
         tempdf1.rename(
-            columns = {'Expocode': vardict['id'], 'Source_DOI': vardict['doi'],
-                     'latitude [dec.deg.N]': vardict['lat'],
-                     'longitude [dec.deg.E]': vardict['lon'],
-                     'sample_depth [m]': vardict['dep'], 'SST [deg.C]': vardict['temp'], 'sal': vardict['sal'],
-                     'fCO2rec [uatm]': vardict['fco2w'], 'fCO2rec_flag': vardict['fco2wf']}, inplace=True)
+            columns = {'Expocode': vardict['id'],
+              'Source_DOI': vardict['doi'],
+              'latitude [dec.deg.N]': vardict['lat'],
+              'longitude [dec.deg.E]': vardict['lon'],
+              'sample_depth [m]': vardict['dep'],
+              'SST [deg.C]': vardict['temp'],
+              'sal': vardict['sal'],
+              'fCO2rec [uatm]': vardict['fco2w'],
+              'fCO2rec_flag': vardict['fco2wf']},
+            inplace=True)
 
         # Create date python object
         tempdtframe = pd.DataFrame(
-            {'year': tempdf1['yr'], 'month': tempdf1['mon'], 'day': tempdf1['day'],
-             'hour': tempdf1['hh'], 'minute': tempdf1['mm'], 'seconds': tempdf1['ss']})
-        tempdf1['DATEVECTOR1'] = pd.to_datetime(tempdtframe,utc = True)
+            {'year': tempdf1['yr'], 'month': tempdf1['mon'],
+            'day': tempdf1['day'], 'hour': tempdf1['hh'],
+            'minute': tempdf1['mm'], 'seconds': tempdf1['ss']})
+        tempdf1['DATEVECTOR1'] = pd.to_datetime(tempdtframe, utc = True)
 
         # Transform longitude to +-180
-        tempdf1.loc[tempdf1[vardict['lon']] > 180, vardict['lon']] = tempdf1[vardict['lon']] - 360
+        tempdf1.loc[tempdf1[vardict['lon']] > 180, vardict['lon']] = tempdf1[
+          vardict['lon']] - 360
 
         # Subset the dataset HERE (cruise flag assignment takes A LONG TIME).
         if subset :
-            tempdf1 = tempdf1[(tempdf1['DATEVECTOR1'] >= pd.to_datetime(mindate)) &
-                            (tempdf1['DATEVECTOR1'] <= pd.to_datetime(maxdate)) &
-                            (tempdf1[vardict['lat']] >= minlat) &
-                            (tempdf1[vardict['lat']] <= maxlat) &
-                            (tempdf1[vardict['lon']] >= minlon) &
-                            (tempdf1[vardict['lon']] <= maxlon)].copy()
+            tempdf1 = tempdf1[
+              (tempdf1['DATEVECTOR1'] >= pd.to_datetime(mindate)) &
+              (tempdf1['DATEVECTOR1'] <= pd.to_datetime(maxdate)) &
+              (tempdf1[vardict['lat']] >= minlat) &
+              (tempdf1[vardict['lat']] <= maxlat) &
+              (tempdf1[vardict['lon']] >= minlon) &
+              (tempdf1[vardict['lon']] <= maxlon)].copy()
             tempdf1.reset_index(drop = True, inplace = True)
             print(len(tempdf1))
 
@@ -106,12 +118,17 @@ if (datafrom == 'local'):
             # Assign Cruise flags A-D
             start_time = time.time()
             for expocode in metainfoAD['Expocode']:
-                cruiseflag = metainfoAD['QC Flag'][metainfoAD['Expocode'] == expocode]
+                cruiseflag = metainfoAD['QC Flag'][metainfoAD[
+                  'Expocode'] == expocode]
 
-                tempdf1['Cruise_flag'].values[tempdf1[vardict['id']] == expocode] = cruiseflag  # this line is very slow
+                # this line is very slow
+                tempdf1['Cruise_flag'].values[
+                tempdf1[vardict['id']] == expocode] = cruiseflag
+
                 counter = counter + 1
                 # print(counter)
-            print("--- %s seconds for cruise flag assignment ---" % (time.time() - start_time))
+            print("--- %s seconds for cruise flag assignment ---"
+             % (time.time() - start_time))
 
         # Merge synthesis and FlagE dataframes in one
         if 'tempdf' not in globals():
@@ -139,39 +156,49 @@ elif (datafrom == 'remote'):
         'latitude<=': maxlat,
         'longitude>=': minlon,
         'longitude<=': maxlon,
-        'WOCE_CO2_water=': "2" #synthesis file only has good data (keep questionable/bad?)
-        # 'fCO2_water_sst_100humidity_uatm=~':"float('nan')" # Have yet to figure out how to set the nan filter
+        'WOCE_CO2_water=': "2"
+        #synthesis file only has good data (keep questionable/bad?)
+
+        # 'fCO2_water_sst_100humidity_uatm=~':"float('nan')"
+        # Have yet to figure out how to set the nan filter
     }
     e.variables = ['expocode', 'time', 'latitude', 'longitude', 'depth', 'sal',
                    'temp', 'fCO2_recommended', 'qc_flag', 'WOCE_CO2_water',
                    'socat_doi']
     tempdf = e.to_pandas(dtype = {10: str, 8: str, 0: str})
 
-    # Retain only valid fco2 values (can't figure out how to do it in erdappy constrains yet)
+    # Retain only valid fco2 values (can't figure out how to do it in erdappy
+    # constrains yet)
     tempdf = tempdf.dropna(subset = ['fCO2_recommended (uatm)']).copy()
     tempdf.reset_index(drop = True, inplace = True)
 
     # Rename columns
     tempdf.rename(
-        columns = {'expocode': vardict['id'], 'socat_doi':vardict['doi'],
-                 'latitude (degrees_north)': vardict['lat'], 'longitude (degrees_east)': vardict['lon'],
-                 'depth (m)': vardict['dep'], 'temp (degrees C)': vardict['temp'], 'sal (PSU)': vardict['sal'],
-                 'fCO2_recommended (uatm)': vardict['fco2w'], 'WOCE_CO2_water': vardict['fco2wf'],
-                 'qc_flag':'Cruise_flag'},
+        columns = {'expocode': vardict['id'],
+          'socat_doi': vardict['doi'],
+          'latitude (degrees_north)': vardict['lat'],
+          'longitude (degrees_east)': vardict['lon'],
+          'depth (m)': vardict['dep'],
+          'temp (degrees C)': vardict['temp'],
+          'sal (PSU)': vardict['sal'],
+          'fCO2_recommended (uatm)': vardict['fco2w'],
+          'WOCE_CO2_water': vardict['fco2wf'],
+          'qc_flag':'Cruise_flag'},
         inplace = True)
 
     # Create python date object
     tempdf['DATEVECTOR1'] = pd.to_datetime(tempdf['time (UTC)'])
 
-
 # Create UNIXDATE and ISO DATEVECTOR
 tempdf[vardict['unixd']] = tempdf['DATEVECTOR1'].astype('int64') // 10 ** 9
-tempdf[vardict['datevec']] = tempdf['DATEVECTOR1'].dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+tempdf[vardict['datevec']] = tempdf[
+  'DATEVECTOR1'].dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 # Assign accuracies following cruise flags
 tempdf[vardict['fco2wac']] = 0.0
 for key in flagaccuracy:
-    tempdf[vardict['fco2wac']].values[tempdf['Cruise_flag'] == key] = flagaccuracy[key]
+    tempdf[vardict['fco2wac']].values[
+      tempdf['Cruise_flag'] == key] = flagaccuracy[key]
 # Flag fco2 as measured
 tempdf[vardict['fco2wc']] = 0
 
