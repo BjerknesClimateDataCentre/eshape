@@ -167,5 +167,5 @@ vignettes/*.pdf
 rsconnect/
 
 # Ignore input and output directories
-/input
-/output
+input
+output
